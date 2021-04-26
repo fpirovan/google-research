@@ -37,6 +37,16 @@ from value_dice import wrappers
 
 import pybullet_envs
 
+def reproducibility_setup(seed=0):
+    import random
+    random.seed(seed)
+
+    import numpy as np
+    np.random.seed(seed)
+
+
+reproducibility_setup()
+
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('env_name', 'HalfCheetahBulletEnv-v0',
