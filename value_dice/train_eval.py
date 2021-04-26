@@ -32,12 +32,14 @@ from tqdm import tqdm
 from value_dice import data_utils
 from value_dice import gail
 from value_dice import twin_sac
-from value_dice import value_dice
+from value_dice import value_dice_inner
 from value_dice import wrappers
+
+import pybullet_envs
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('env_name', 'HalfCheetah-v2',
+flags.DEFINE_string('env_name', 'HalfCheetahBulletEnv-v0',
                     'Environment for training/evaluation.')
 flags.DEFINE_integer('seed', 42, 'Fixed random seed for training.')
 flags.DEFINE_integer('sample_batch_size', 256, 'Batch size.')
@@ -58,8 +60,8 @@ flags.DEFINE_integer('num_random_actions', int(2e3),
                      'Fill replay buffer with N random actions.')
 flags.DEFINE_integer('start_training_timesteps', int(1e3),
                      'Start training when replay buffer contains N timesteps.')
-flags.DEFINE_string('expert_dir', None, 'Directory to load expert demos.')
-flags.DEFINE_string('save_dir', None, 'Directory to save results to.')
+flags.DEFINE_string('expert_dir', './datasets', 'Directory to load expert demos.')
+flags.DEFINE_string('save_dir', "/Users/fedepiro/Projects/google-research/value_dice/res", 'Directory to save results to.')
 flags.DEFINE_boolean('learn_alpha', True,
                      'Whether to learn temperature for SAC.')
 flags.DEFINE_boolean('normalize_states', True,
@@ -113,23 +115,30 @@ def evaluate(actor, env, num_episodes=10):
   Returns:
     Averaged reward and a total number of steps.
   """
-  total_timesteps = 0
-  total_returns = 0
+  lens = []
+  rews = []
 
   for _ in range(num_episodes):
     state = env.reset()
     done = False
+
+    len = 0
+    rew = 0
+
     while not done:
       action, _, _ = actor(np.array([state]))
       action = action[0].numpy()
 
-      next_state, reward, done, _ = env.step(action)
+      next_state, reward, done, _ = env.step(action[None, :])
 
-      total_returns += reward
-      total_timesteps += 1
+      rew += reward
+      len += 1
       state = next_state
 
-  return total_returns / num_episodes, total_timesteps / num_episodes
+    lens.append(len)
+    rews.append(rew)
+
+  return np.average(rews), np.average(lens), np.std(rews), np.std(lens)
 
 
 def main(_):
@@ -241,7 +250,7 @@ def main(_):
     imitator = gail.RatioGANGP(env.observation_space.shape[0],
                                env.action_space.shape[0], FLAGS.log_interval)
   elif 'value_dice' in FLAGS.algo:
-    imitator = value_dice.ValueDICE(
+    imitator = value_dice_inner.ValueDICE(
         env.observation_space.shape[0],
         env.action_space.shape[0],
         nu_lr=FLAGS.nu_lr,
@@ -280,7 +289,7 @@ def main(_):
 
       if total_timesteps % FLAGS.eval_interval == 0:
         logging.info('Performing policy eval.')
-        average_returns, evaluation_timesteps = evaluate(sac.actor, eval_env)
+        average_returns, evaluation_timesteps, std_rew, std_len = evaluate(sac.actor, eval_env)
 
         eval_returns.append(average_returns)
         np.save(log_filename, np.array(eval_returns))
@@ -295,6 +304,8 @@ def main(_):
               step=total_timesteps)
         logging.info('Eval: ave returns=%f, ave episode length=%f',
                      average_returns, evaluation_timesteps)
+        logging.info('Eval: std returns=%f, std episode length=%f',
+                     std_rew, std_len)
 
       if done:
         if episode_timesteps > 0:
@@ -324,10 +335,10 @@ def main(_):
           action = (action + np.random.normal(
               0, 0.1, size=action.shape)).clip(-1, 1)
 
-      next_obs, reward, done, _ = env.step(action)
+      next_obs, reward, done, _ = env.step(action[None, :])
 
       # done caused by episode truncation.
-      truncated_done = done and episode_timesteps + 1 == env._max_episode_steps  # pylint: disable=protected-access
+      truncated_done = done and episode_timesteps + 1 == env.spec.max_episode_steps  # pylint: disable=protected-access
 
       if done and not truncated_done:
         next_obs = env.get_absorbing_state()

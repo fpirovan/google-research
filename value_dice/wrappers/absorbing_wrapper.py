@@ -54,7 +54,7 @@ class AbsorbingWrapper(gym.ObservationWrapper):
     Returns:
       A numpy array corresponding to a non-absorbing state obtained from input.
     """
-    return np.concatenate([obs, [0]], -1)
+    return np.concatenate([obs.ravel(), [0]], -1)
 
   def get_absorbing_state(self):
     """Returns an absorbing state that corresponds to the environment.

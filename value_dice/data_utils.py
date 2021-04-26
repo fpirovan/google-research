@@ -119,7 +119,7 @@ def add_absorbing_states(expert_states, expert_actions, expert_next_states,
   current_len = 0
   while i < len(expert_states):
     current_len += 1
-    if expert_dones[i] and current_len < env._max_episode_steps:  # pylint: disable=protected-access
+    if expert_dones[i] and current_len < env.spec.max_episode_steps:  # pylint: disable=protected-access
       current_len = 0
       expert_states.insert(i + 1, env.get_absorbing_state())
       expert_next_states[i] = env.get_absorbing_state()
