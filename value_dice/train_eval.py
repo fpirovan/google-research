@@ -61,7 +61,7 @@ flags.DEFINE_integer('num_random_actions', int(2e3),
 flags.DEFINE_integer('start_training_timesteps', int(1e3),
                      'Start training when replay buffer contains N timesteps.')
 flags.DEFINE_string('expert_dir', './datasets', 'Directory to load expert demos.')
-flags.DEFINE_string('save_dir', "/Users/fedepiro/Projects/google-research/value_dice/res", 'Directory to save results to.')
+flags.DEFINE_string('save_dir', "./res", 'Directory to save results to.')
 flags.DEFINE_boolean('learn_alpha', True,
                      'Whether to learn temperature for SAC.')
 flags.DEFINE_boolean('normalize_states', True,
