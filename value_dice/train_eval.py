@@ -104,7 +104,7 @@ def add_samples_to_replay_buffer(replay_buffer, obs, action, next_obs):
                            np.array([[1.0]]).astype(np.float32)))
 
 
-def evaluate(actor, env, num_episodes=10):
+def evaluate(actor, env, num_episodes=3):
   """Evaluates the policy.
 
   Args:
