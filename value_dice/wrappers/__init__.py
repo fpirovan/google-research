@@ -136,8 +136,8 @@ def create_il_env(env_name, seed, shift, scale):
     Returns:
       An initialized gym environment.
     """
-    # env = gym.make(env_name)
-    expert_dir = pjoin("/Users/fedepiro/Projects/topographic-nn/environments", "experts", env_name)
+    expert_dir = pjoin("/cluster/home/fpirovan/topographic-nn/environments", "experts", env_name)
+    # expert_dir = pjoin("/Users/fedepiro/Projects/topographic-nn/environments", "experts", env_name)
     stats_dir = pjoin(expert_dir, env_name)
     hyperparams = load_saved_hyperparams(stats_dir)
     env = create_zoo_env(env_name, stats_dir, seed, hyperparams)
