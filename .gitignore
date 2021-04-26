@@ -19,3 +19,4 @@ dist/
 # Other
 *.DS_Store
 /value_dice/datasets/
+/value_dice/res/
